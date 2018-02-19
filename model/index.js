@@ -1,3 +1,3 @@
 module.exports = {
-    google: require('./google')
+    db: require('./db')
 }
