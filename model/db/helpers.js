@@ -31,29 +31,29 @@ function getRowByQuery(spreadsheetId, columnId, queryString, orderBy = spreadshe
 function createProductObject(row) {
     const schema = joi.object().unknown().required()
         .keys({
-            productId: joi.number().required()
+            productId: joi.number().min(0).required()
         }).rename('productid', 'productId')
         .keys({
-            invoiceId: joi.number().required()
+            invoiceId: joi.number().min(0).required()
         }).rename('invoiceid', 'invoiceId')
         .keys({
-            placeOfPurchase: joi.string().required()
+            placeOfPurchase: joi.string().min(2).required()
         }).rename('placeofpurchase', 'placeOfPurchase')
         .keys({
-            placeOfInvoice: joi.string().required()
+            placeOfInvoice: joi.string().min(2).required()
         }).rename('placeofinvoice', 'placeOfInvoice')
         .keys({
-            warrantyVoidAt: joi.string().required()
+            warrantyVoidAt: joi.date().min('1-1-2014').required()
         }).rename('warrantyvoidat', 'warrantyVoidAt')
         .keys({
-            brand: joi.string().required(),
-            class: joi.string().required(),
-            shop: joi.string().required(),
-            type: joi.string().required(),
-            color: joi.string().required(),
-            material: joi.string().required(),
+            brand: joi.string().min(2).required(),
+            class: joi.string().min(2).required(),
+            shop: joi.string().min(2).required(),
+            type: joi.string().min(2).required(),
+            color: joi.string().min(3).required(),
+            material: joi.string().min(2).required(),
             comment: joi.string().required(),
-            pictures: joi.string().required()
+            pictures: joi.string().min(3).required()
         })
 
     const { err, value: product } = joi.validate(row, schema)
