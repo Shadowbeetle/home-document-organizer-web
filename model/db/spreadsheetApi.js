@@ -4,6 +4,7 @@ const promisify = require('util').promisify
 const GoogleSpreadsheet = require('google-spreadsheet')
 const googleApiConfig = require('../../config/googleApi')
 const spreadsheetConfig = require('../../config/spreadsheet')
+const spreadsheetQuery = require('./spreadsheetQuery')
 
 const doc = new GoogleSpreadsheet(googleApiConfig.spreadsheetId)
 const credentials = {
@@ -11,9 +12,9 @@ const credentials = {
   private_key: googleApiConfig.privateKey
 }
 
-useServiceAccountAuth = promisify(doc.useServiceAccountAuth)
-getCells = promisify(doc.getCells)
-getRows = promisify(doc.getRows)
+const useServiceAccountAuth = promisify(doc.useServiceAccountAuth)
+const getCells = promisify(doc.getCells)
+const getRows = promisify(doc.getRows)
 
 async function authenticate () {
   await useServiceAccountAuth(credentials)
@@ -60,17 +61,24 @@ function getColumn (
   })
 }
 
-function getRowByQuery (
+async function getRowsByQuery (
   spreadsheetId,
   columnId,
-  queryString,
+  operator,
+  queryValue,
   orderBy = spreadsheetConfig.productIdColumn
 ) {
-  const query = _.lowerCase(columnId).replace(/[_\s]/g, '') + queryString
-  return getRows(spreadsheetId, {
-    query,
-    orderBy
-  })
+  let rows
+  try {
+    rows = await getRows(spreadsheetId, { orderBy })
+  } catch (err) {
+    console.error('Could not get rows')
+    throw err
+  }
+  return spreadsheetQuery
+    .builder(rows)
+    .where(columnId, '=', queryValue)
+    .values()
 }
 
 async function gatherValuesOfColumn (
@@ -151,7 +159,7 @@ module.exports = {
   getInfo,
   getMaxValue,
   getColumn,
-  getRowByQuery,
+  getRowsByQuery,
   createProductObject,
   gatherValuesOfColumn
 }

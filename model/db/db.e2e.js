@@ -5,13 +5,14 @@ const db = require('./')
 
 const basePromise = db.authenticate().catch(err => {
   console.log('Could not authenticate, exiting test')
-  console.error(err)
+  console.error(err.message)
+  console.error(err.stack)
   process.exit(1)
 })
 
 const handleError = (t, message) => err => {
   console.error(err.message)
-  console.error(err)
+  console.error(err.stack)
   t.fail(message)
 }
 

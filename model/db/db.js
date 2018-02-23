@@ -6,7 +6,7 @@ const {
   getInfo,
   getMaxValue,
   getColumn,
-  getRowByQuery,
+  getRowsByQuery,
   createProductObject,
   gatherValuesOfColumn
 } = require('./spreadsheetApi')
@@ -28,13 +28,9 @@ function getLatestProductId () {
 async function getProductById (id) {
   let rows
   try {
-    rows = await getRowByQuery(
-      spreadsheetConfig.sheetId,
-      'productId',
-      `= ${id}`
-    )
+    rows = await getRowsByQuery(spreadsheetConfig.sheetId, 'productId', '=', id)
   } catch (err) {
-    console.error('Could not get row by query')
+    console.error('Could not get product by id')
     throw err
   }
   return createProductObject(_.head(rows))
@@ -43,13 +39,9 @@ async function getProductById (id) {
 async function getInvoiceById (id) {
   let rows
   try {
-    rows = await getRowByQuery(
-      spreadsheetConfig.sheetId,
-      'invoiceId',
-      `= ${id}`
-    )
+    rows = await getRowsByQuery(spreadsheetConfig.sheetId, 'invoiceId', '=', id)
   } catch (err) {
-    console.error('Could not get row by query')
+    console.error('Could not get invoice by id')
     throw err
   }
   return rows.map(createProductObject)
