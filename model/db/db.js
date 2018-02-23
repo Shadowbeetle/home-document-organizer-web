@@ -1,31 +1,15 @@
-const promisify = require('util').promisify
-const GoogleSpreadsheet = require('google-spreadsheet')
 const _ = require('lodash')
-const joi = require('joi')
 const googleApiConfig = require('../../config/googleApi')
 const spreadsheetConfig = require('../../config/spreadsheet')
 const {
+  authenticate,
+  getInfo,
   getMaxValue,
   getColumn,
   getRowByQuery,
   createProductObject,
   gatherValuesOfColumn
-} = require('./helpers')
-
-const doc = new GoogleSpreadsheet(googleApiConfig.spreadsheetId)
-const credentials = {
-  client_email: googleApiConfig.clientEmail,
-  private_key: googleApiConfig.privateKey
-}
-
-useServiceAccountAuth = promisify(doc.useServiceAccountAuth)
-getInfo = promisify(doc.useServiceAccountAuth)
-getCells = promisify(doc.getCells)
-getRows = promisify(doc.getRows)
-
-async function authenticate () {
-  await useServiceAccountAuth(credentials)
-}
+} = require('./spreadsheetApi')
 
 function getLatestInvoiceId () {
   return getMaxValue(
@@ -129,6 +113,7 @@ function gatherMaterials () {
 
 module.exports = {
   authenticate,
+  getInfo,
   getLatestInvoiceId,
   getLatestProductId,
   getProductById,
@@ -140,6 +125,5 @@ module.exports = {
   gatherPlacesOfInvoices,
   gatherPlacesOfPurchases,
   gatherShops,
-  gatherTypes,
-  doc
+  gatherTypes
 }

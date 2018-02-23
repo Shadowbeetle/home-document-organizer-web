@@ -32,12 +32,9 @@ const PRODUCT_FIELDS = [
 
 test('Check if right worksheet is accessed', t => {
   t.plan(3)
-  basePromise.then(() => {
-    db.doc.getInfo(function (err, info) {
-      if (err) {
-        console.error(err)
-        t.fail('Error happened while getting sheet info')
-      }
+  basePromise
+    .then(db.getInfo)
+    .then(info => {
       sheet = info.worksheets[1]
       t.equal(info.title, 'Számlák', 'it should load Spreadheet: Számlák')
       t.equal(
@@ -47,7 +44,7 @@ test('Check if right worksheet is accessed', t => {
       )
       t.equal(sheet.title, 'Teszt', 'It should be called Sheet1')
     })
-  })
+    .catch(handleError(t, 'Error happened while getting sheet info'))
 })
 
 test('getLastInvoiceId', t => {

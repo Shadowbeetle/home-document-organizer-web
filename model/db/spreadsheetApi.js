@@ -1,6 +1,34 @@
 const _ = require('lodash')
 const joi = require('joi')
+const promisify = require('util').promisify
+const GoogleSpreadsheet = require('google-spreadsheet')
+const googleApiConfig = require('../../config/googleApi')
 const spreadsheetConfig = require('../../config/spreadsheet')
+
+const doc = new GoogleSpreadsheet(googleApiConfig.spreadsheetId)
+const credentials = {
+  client_email: googleApiConfig.clientEmail,
+  private_key: googleApiConfig.privateKey
+}
+
+useServiceAccountAuth = promisify(doc.useServiceAccountAuth)
+getCells = promisify(doc.getCells)
+getRows = promisify(doc.getRows)
+
+async function authenticate () {
+  await useServiceAccountAuth(credentials)
+}
+
+function getInfo () {
+  return new Promise((resolve, reject) => {
+    doc.getInfo((err, info) => {
+      if (err) {
+        return reject(err)
+      }
+      return resolve(info)
+    })
+  })
+}
 
 async function getMaxValue (
   sheetId,
@@ -119,6 +147,8 @@ function createProductObject (row) {
 }
 
 module.exports = {
+  authenticate,
+  getInfo,
   getMaxValue,
   getColumn,
   getRowByQuery,
