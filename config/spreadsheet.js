@@ -1,6 +1,7 @@
 const joi = require('joi')
 
-const schema = joi.object({
+const schema = joi
+  .object({
     SPREADSHEET_SHEET_ID: joi.number().default(1),
     SPREADSHEET_FIRST_DATA_ROW: joi.number().default(3),
     SPREADSHEET_PRODUCT_ID_COLUMN: joi.number().default(1),
@@ -16,7 +17,9 @@ const schema = joi.object({
     SPREADSHEET_MATERIAL_COLUMN: joi.number().default(11),
     SPREADSHEET_COMMENT_COLUMN: joi.number().default(12),
     SPREADSHEET_PICTURE_COLUMN: joi.number().default(13)
-}).unknown().required()
+  })
+  .unknown()
+  .required()
 
 const { err, value: envVars } = joi.validate(process.env, schema)
 if (err) {
@@ -24,19 +27,19 @@ if (err) {
 }
 
 module.exports = {
-    sheetId :envVars.SPREADSHEET_SHEET_ID,
-    firstDataRow: envVars.SPREADSHEET_FIRST_DATA_ROW,
-    invoiceIdColumn: envVars.SPREADSHEET_INVOICE_ID_COLUMN,
-    productIdColumn: envVars.SPREADSHEET_PRODUCT_ID_COLUMN,
-    placeOfPurchaseColumn: envVars.SPREADSHEET_PLACE_OF_PURCHASE_COLUMN,
-    brandColumn: envVars.SPREADSHEET_BRAND_COLUMN,
-    classColumn: envVars.SPREADSHEET_CLASS_COLUMN,
-    placeOfInvoiceColumn: envVars.SPREADSHEET_PLACE_OF_INVOICE_COLUMN,
-    shopColumn: envVars.SPREADSHEET_SHOP_COLUMN,
-    typeColumn: envVars.SPREADSHEET_TYPE_COLUMN,
-    warrantyVoidAtColumn: envVars.SPREADSHEET_WARRANTY_VOID_AT_COLUMN,
-    colorColumn: envVars.SPREADSHEET_COLOR_COLUMN,
-    materialColumn: envVars.SPREADSHEET_MATERIAL_COLUMN,
-    commentColumn: envVars.SPREADSHEET_COMMENT_COLUMN,
-    pictureColumn: envVars.SPREADSHEET_PICTURE_COLUMN
+  sheetId: envVars.SPREADSHEET_SHEET_ID,
+  firstDataRow: envVars.SPREADSHEET_FIRST_DATA_ROW,
+  invoiceIdColumn: envVars.SPREADSHEET_INVOICE_ID_COLUMN,
+  productIdColumn: envVars.SPREADSHEET_PRODUCT_ID_COLUMN,
+  placeOfPurchaseColumn: envVars.SPREADSHEET_PLACE_OF_PURCHASE_COLUMN,
+  brandColumn: envVars.SPREADSHEET_BRAND_COLUMN,
+  classColumn: envVars.SPREADSHEET_CLASS_COLUMN,
+  placeOfInvoiceColumn: envVars.SPREADSHEET_PLACE_OF_INVOICE_COLUMN,
+  shopColumn: envVars.SPREADSHEET_SHOP_COLUMN,
+  typeColumn: envVars.SPREADSHEET_TYPE_COLUMN,
+  warrantyVoidAtColumn: envVars.SPREADSHEET_WARRANTY_VOID_AT_COLUMN,
+  colorColumn: envVars.SPREADSHEET_COLOR_COLUMN,
+  materialColumn: envVars.SPREADSHEET_MATERIAL_COLUMN,
+  commentColumn: envVars.SPREADSHEET_COMMENT_COLUMN,
+  pictureColumn: envVars.SPREADSHEET_PICTURE_COLUMN
 }
