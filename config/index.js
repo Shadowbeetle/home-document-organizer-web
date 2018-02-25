@@ -1,3 +1,3 @@
 module.exports = {
-    googleApi: require('./googleApi')
+    postgres: require('./postgres')
 }
