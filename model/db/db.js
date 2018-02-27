@@ -1,6 +1,6 @@
 const _ = require('lodash')
-const googleApiConfig = require('../../config/googleApi')
-const spreadsheetConfig = require('../../config/spreadsheet')
+const dbConfig = require('../../config/postgres')
+
 const {
   authenticate,
   getInfo,
@@ -11,21 +11,21 @@ const {
   gatherValuesOfColumn
 } = require('./spreadsheetApi')
 
-function getLatestInvoiceId () {
+function getLatestInvoiceId() {
   return getMaxValue(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.invoiceIdColumn
   )
 }
 
-function getLatestProductId () {
+function getLatestProductId() {
   return getMaxValue(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.productIdColumn
   )
 }
 
-async function getProductById (id) {
+async function getProductById(id) {
   let rows
   try {
     rows = await getRowsByQuery(spreadsheetConfig.sheetId, 'productId', '=', id)
@@ -36,7 +36,7 @@ async function getProductById (id) {
   return createProductObject(_.head(rows))
 }
 
-async function getInvoiceById (id) {
+async function getInvoiceById(id) {
   let rows
   try {
     rows = await getRowsByQuery(spreadsheetConfig.sheetId, 'invoiceId', '=', id)
@@ -47,56 +47,56 @@ async function getInvoiceById (id) {
   return rows.map(createProductObject)
 }
 
-function gatherPlacesOfPurchases () {
+function gatherPlacesOfPurchases() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.placeOfPurchaseColumn
   )
 }
 
-function gatherBrands () {
+function gatherBrands() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.brandColumn
   )
 }
 
-function gatherClasses () {
+function gatherClasses() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.classColumn
   )
 }
 
-function gatherPlacesOfInvoices () {
+function gatherPlacesOfInvoices() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.placeOfInvoiceColumn
   )
 }
 
-function gatherShops () {
+function gatherShops() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.shopColumn
   )
 }
 
-function gatherTypes () {
+function gatherTypes() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.typeColumn
   )
 }
 
-function gatherColors () {
+function gatherColors() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.colorColumn
   )
 }
 
-function gatherMaterials () {
+function gatherMaterials() {
   return gatherValuesOfColumn(
     spreadsheetConfig.sheetId,
     spreadsheetConfig.materialColumn

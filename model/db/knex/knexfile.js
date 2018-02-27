@@ -1,4 +1,4 @@
-const user = process.env.POSTGRES_USER || process.env.USER || 'root'
+const user = process.env.POSTGRES_USER || 'postgres'
 const pw = process.env.POSTGRES_PASSWORD || ''
 const db = process.env.POSTGRES_DATABASE || 'documents'
 

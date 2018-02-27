@@ -158,8 +158,8 @@ test('getInvoiceById', t => {
       reason
         ? t.fail(reason)
         : t.pass(
-            'It should be the products from row 4 and 5 in the Teszt sheet'
-          )
+          'It should be the products from row 4 and 5 in the Teszt sheet'
+        )
     })
     .catch(handleError('Error while getting invoice in #getInvoiceById'))
 })

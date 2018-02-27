@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test-e2e": "node -r dotenv/config $(find model -name \"*.e2e.js\") | node_modules/.bin/tap-spec",
-    "test-unit": "node -r dotenv/config $(find model -name \"*.unit.js\") | node_modules/.bin/tap-spec"
+    "test-unit": "node -r dotenv/config $(find model -name \"*.unit.js\") | node_modules/.bin/tap-spec",
+    "migrate-db": "NODE_ENV=provision PROCESS_TYPE=script node ./scripts/migratedb",
+    "rollback-db": "NODE_ENV=provision PROCESS_TYPE=script node ./scripts/rollbackdb"
   },
   "author": "Tamás Kadlecsik",
   "license": "ISC",
