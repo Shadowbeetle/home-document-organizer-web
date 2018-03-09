@@ -18,13 +18,4 @@ services:
     ports:
       - 8888:8080
   
-  web:
-    build: .
-    image: document-organizer-web
-    ports:
-      - 3000:3000
-    depends_on: 
-      - db
-    environment:
-      POSTGRES_URI: postgres://postgres:pa55word@db:5432/products
   
