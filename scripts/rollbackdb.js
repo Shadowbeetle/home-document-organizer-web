@@ -5,7 +5,7 @@
 const args = process.argv.slice(2)
 
 if (args.indexOf('--local') > -1 || args.indexOf('-L') > -1) {
-  process.env.POSTGRES_URI = `postgres://postgres:pa55word}@localhost:5432/products`
+  process.env.POSTGRES_URI = `postgres://postgres:pa55word@localhost:5432/products`
 
   console.info(`Local db used: ${process.env.POSTGRES_URI}`)
 }
