@@ -16,10 +16,11 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - 8888:8080
   
   web:
-    image: homedocumentorganizer_web
+    build: .
+    image: document-organizer-web
     ports:
       - 3000:3000
     depends_on: 
