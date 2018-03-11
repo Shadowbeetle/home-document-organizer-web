@@ -34,9 +34,6 @@ const config = {
       pool: {
         min: envVars.POSTGRES_POOL_MIN,
         max: envVars.POSTGRES_POOL_MAX
-      },
-      migrations: {
-        directory: path.join(__dirname, '../model/db/knex/migrations')
       }
     }
   }

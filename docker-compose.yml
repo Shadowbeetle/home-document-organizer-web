@@ -8,7 +8,7 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: pa55word
-      POSTGRES_DB: products
+      POSTGRES_DB: document_organizer
     ports: 
       - 5432:5432
 
