@@ -4,9 +4,13 @@
   "description": "A system to organize home documents with google sheets",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run e2e-setup && npm run test-e2e && npm run e2e-teardown",
     "test-e2e": "node -r dotenv/config $(find model -name \"*.e2e.js\") | node_modules/.bin/tap-spec",
     "test-unit": "node -r dotenv/config $(find model -name \"*.unit.js\") | node_modules/.bin/tap-spec",
+    "start-containers": "docker-compose up -d",
+    "stop-containers": "docker-compose down",
+    "e2e-setup": "npm run star-containers && npm run migrate-local",
+    "e2e-teardown": "npm run stop-containers",
     "migrate-local": "migrate -path=model/db/migrations -database=postgres://postgres:pa55word@localhost/document_organizer?sslmode=disable up",
     "rollback-local": "migrate -path=model/db/migrations -database=postgres://postgres:pa55word@localhost/document_organizer?sslmode=disable down 1",
     "rollback-all-local": "migrate -path=model/db/migrations -database=postgres://postgres:pa55word@localhost/document_organizer?sslmode=disable down"

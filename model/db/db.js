@@ -1,113 +1,104 @@
 const _ = require('lodash')
 const dbConfig = require('../../config/postgres')
+const knex = require('../db/knex')
 
-const {
-  authenticate,
-  getInfo,
-  getMaxValue,
-  getColumn,
-  getRowsByQuery,
-  createProductObject,
-  gatherValuesOfColumn
-} = require('./spreadsheetApi')
+const PRODUCT_TABLE = 'products'
 
-function getLatestInvoiceId() {
-  return getMaxValue(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.invoiceIdColumn
-  )
+function addProduct (product) {
+  const row = _.mapKeys(product, (value, key) => _.snakeCase(key))
+  return knex(PRODUCT_TABLE).insert(row).returning('id')
 }
 
-function getLatestProductId() {
-  return getMaxValue(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.productIdColumn
+function addProducts (products) {
+  const rows = _.map(products, product =>
+    _.mapKeys(product, (value, key) => _.snakeCase(key))
   )
+  return knex(PRODUCT_TABLE).insert(rows).returning('id')
 }
 
-async function getProductById(id) {
-  let rows
+async function getProductById (id) {
+  let row
   try {
-    rows = await getRowsByQuery(spreadsheetConfig.sheetId, 'productId', '=', id)
+    row = await knex(PRODUCT_TABLE).where({ id }).first()
   } catch (err) {
     console.error('Could not get product by id')
     throw err
   }
-  return createProductObject(_.head(rows))
+  return createProductObject(row)
 }
 
-async function getInvoiceById(id) {
+async function getInvoiceById (invoice_id) {
   let rows
   try {
-    rows = await getRowsByQuery(spreadsheetConfig.sheetId, 'invoiceId', '=', id)
+    rows = await knex(PRODUCT_TABLE).where({ invoice_id })
   } catch (err) {
-    console.error('Could not get invoice by id')
+    console.error('Could not get product by id')
     throw err
   }
-  return rows.map(createProductObject)
+  return _.map(rows, createProductObject)
 }
 
-function gatherPlacesOfPurchases() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.placeOfPurchaseColumn
-  )
+async function gatherValuesOfColumn (columnName) {
+  let products
+  try {
+    products = await knex(PRODUCT_TABLE).select(columnName).distinct()
+  } catch (err) {
+    console.error(`Could not gather ${columnName}`)
+    throw err
+  }
+  return _.map(products, product => _.get(product, columnName))
 }
 
-function gatherBrands() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.brandColumn
-  )
+function gatherBrands () {
+  return gatherValuesOfColumn('brand')
 }
 
-function gatherClasses() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.classColumn
-  )
+function gatherClasses () {
+  return gatherValuesOfColumn('class')
 }
 
-function gatherPlacesOfInvoices() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.placeOfInvoiceColumn
-  )
+async function gatherColors () {
+  let products
+  try {
+    products = await knex(PRODUCT_TABLE)
+      .select(knex.raw('UNNEST(color) as color'))
+      .distinct()
+  } catch (err) {
+    console.error('Could not gather colors')
+    throw err
+  }
+
+  return _.map(products, product => _.get(product, 'color'))
 }
 
-function gatherShops() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.shopColumn
-  )
+function gatherMaterials () {
+  return gatherValuesOfColumn('material')
 }
 
-function gatherTypes() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.typeColumn
-  )
+function gatherPlacesOfInvoices () {
+  return gatherValuesOfColumn('place_of_invoice')
 }
 
-function gatherColors() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.colorColumn
-  )
+function gatherPlacesOfPurchases () {
+  return gatherValuesOfColumn('place_of_purchase')
 }
 
-function gatherMaterials() {
-  return gatherValuesOfColumn(
-    spreadsheetConfig.sheetId,
-    spreadsheetConfig.materialColumn
-  )
+function gatherShops () {
+  return gatherValuesOfColumn('shop')
+}
+
+function gatherTypes () {
+  return gatherValuesOfColumn('type')
+}
+
+function createProductObject (row) {
+  return _.mapKeys(row, (value, key) => _.camelCase(key))
 }
 
 module.exports = {
-  authenticate,
-  getInfo,
-  getLatestInvoiceId,
-  getLatestProductId,
+  _PRODUCT_TABLE: PRODUCT_TABLE,
+  addProduct,
+  addProducts,
   getProductById,
   getInvoiceById,
   gatherBrands,
