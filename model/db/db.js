@@ -5,15 +5,22 @@ const knex = require('../db/knex')
 const PRODUCT_TABLE = 'products'
 
 function addProduct (product) {
-  const row = _.mapKeys(product, (value, key) => _.snakeCase(key))
+  const row = createRowFromObject(product)
   return knex(PRODUCT_TABLE).insert(row).returning('id')
 }
 
 function addProducts (products) {
-  const rows = _.map(products, product =>
-    _.mapKeys(product, (value, key) => _.snakeCase(key))
-  )
+  const rows = _.map(products, createRowFromObject)
   return knex(PRODUCT_TABLE).insert(rows).returning('id')
+}
+
+function deleteProductById (id) {
+  return knex(PRODUCT_TABLE).del().where({ id })
+}
+
+function updateProduct (product) {
+  const row = createRowFromObject(product)
+  return knex(PRODUCT_TABLE).update(row).where({ id: product.id })
 }
 
 async function getProductById (id) {
@@ -91,6 +98,10 @@ function gatherTypes () {
   return gatherValuesOfColumn('type')
 }
 
+function createRowFromObject (obj) {
+  return _.mapKeys(obj, (value, key) => _.snakeCase(key))
+}
+
 function createProductObject (row) {
   return _.mapKeys(row, (value, key) => _.camelCase(key))
 }
@@ -99,6 +110,8 @@ module.exports = {
   _PRODUCT_TABLE: PRODUCT_TABLE,
   addProduct,
   addProducts,
+  deleteProductById,
+  updateProduct,
   getProductById,
   getInvoiceById,
   gatherBrands,

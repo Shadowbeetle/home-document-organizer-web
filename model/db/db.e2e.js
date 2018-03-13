@@ -7,12 +7,18 @@ const knex = require('./knex')
 const handleError = (t, message) => err => {
   console.error(err.message)
   console.error(err.stack)
-  t.fail(message)
+
   process.exit(1)
 }
 
-const cleanup = ids => {
-  return knex(db._PRODUCT_TABLE).del().whereIn('id', ids)
+const cleanup = async (ids, t) => {
+  try {
+    return await knex(db._PRODUCT_TABLE).del().whereIn('id', ids)
+  } catch (err) {
+    console.error('Could not cleanup db after test')
+    console.error(err)
+    process.exit(1)
+  }
 }
 
 const testProduct = {
@@ -34,7 +40,7 @@ const testProduct = {
   warrantyVoidAt: new Date('2019-01-01')
 }
 
-const testProduct1 = {
+const secondTestProduct = {
   brand: 'test brand1',
   class: 'test class1',
   color: ['test color1', 'test color2', 'test color3'],
@@ -70,13 +76,14 @@ const expectedRow = {
 }
 
 test('cleanDb', async t => {
+  t.plan(1)
   await knex(db._PRODUCT_TABLE).truncate()
-  t.end()
+  t.pass('initial db clean')
 })
 
 test('addProduct', async t => {
   let idsToCleanup = []
-  t.plan(2)
+  t.plan(3)
 
   try {
     const ids = await db.addProduct(testProduct)
@@ -89,18 +96,89 @@ test('addProduct', async t => {
 
     t.equal(rows.length, 1)
     const reason = whyNotEqual(savedProduct, expectedRow)
-    reason ? t.fail(reason) : t.pass('should save product')
+    if (reason) {
+      t.fail(reason)
+      process.exit(1)
+    }
+    t.pass('should save product')
   } catch (err) {
-    handleError(t, 'Error happened in product insert')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
+  }
+})
+
+test('deleteProduct', async t => {
+  t.plan(3)
+  const id0 = 0
+  const id1 = 1
+  const idsToCleanup = [id0, id1]
+  const testProductWithId = Object.assign({}, testProduct, { id: id0 })
+  const secondTestProductWithId = Object.assign({}, secondTestProduct, {
+    id: id1
+  })
+
+  try {
+    await db.addProducts([testProductWithId, secondTestProductWithId])
+    await db.deleteProductById(secondTestProductWithId.id)
+
+    const rows = await knex(db._PRODUCT_TABLE).select('*')
+    const savedProduct = _.chain(rows[0])
+      .omit(['updated_at', 'created_at', 'id'])
+      .value()
+
+    t.equal(rows.length, 1)
+    const reason = whyNotEqual(savedProduct, expectedRow)
+    if (reason) {
+      t.fail(reason)
+      process.exit(1)
+    }
+
+    t.pass('should delete testProduct')
+  } catch (err) {
+    console.error(err)
+    process.exit(1)
+  } finally {
+    await cleanup(idsToCleanup)
+    t.pass('db clean')
+  }
+})
+
+test('updateProduct', async t => {
+  t.plan(2)
+  let ids
+  try {
+    ids = await db.addProduct(testProduct)
+    const id = ids[0]
+    const updatedProduct = Object.assign({}, testProduct, { id })
+    await db.updateProduct(updatedProduct)
+
+    const product = await db.getProductById(id)
+    const savedProduct = _.chain(product)
+      .omit(['updatedAt', 'createdAt'])
+      .value()
+
+    const reason = whyNotEqual(savedProduct, updatedProduct)
+    if (reason) {
+      t.fail(reason)
+      process.exit(1)
+    }
+
+    t.pass('should delete testProduct')
+  } catch (err) {
+    console.error(err)
+    process.exit(1)
+  } finally {
+    await cleanup(ids)
+    t.pass('db clean')
   }
 })
 
 test('getProductById', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
     const ids = await db.addProduct(testProduct)
@@ -113,22 +191,27 @@ test('getProductById', async t => {
       .value()
 
     const reason = whyNotEqual(savedProduct, testProduct)
-    reason ? t.fail(reason) : t.pass('should find product for id')
+    if (reason) {
+      t.fail(reason)
+      process.exit(1)
+    }
+    t.pass('should find product for id')
   } catch (err) {
-    handleError(t, 'Error happened in getProductById')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
 test('getInvoiceById', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const products = await db.getInvoiceById(testProduct.invoiceId)
@@ -136,24 +219,28 @@ test('getInvoiceById', async t => {
       .map(p => _.omit(p, ['updatedAt', 'createdAt', 'id']))
       .value()
 
-    const reason = whyNotEqual(savedProducts, testProducts)
-    reason ? t.fail(reason) : t.pass('should find products for invoice id')
+    t.deepEqual(
+      _.difference(savedProducts, testProducts),
+      [],
+      'the difference of the saved and expected values should be empty'
+    )
   } catch (err) {
-    handleError(t, 'Error happened in getInvoiceById')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
 test('gatherBrands', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const expectedBrands = [testProduct.brand, testProduct1.brand]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const expectedBrands = [testProduct.brand, secondTestProduct.brand]
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedBrands = await db.gatherBrands()
@@ -163,21 +250,22 @@ test('gatherBrands', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherBrands')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
 test('gatherClasses', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const expectedClasses = [testProduct.class, testProduct1.class]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const expectedClasses = [testProduct.class, secondTestProduct.class]
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedClasses = await db.gatherClasses()
@@ -187,21 +275,22 @@ test('gatherClasses', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherClasses')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
 test('gatherColors', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const expectedColors = testProduct.color.concat(testProduct1.color)
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const expectedColors = testProduct.color.concat(secondTestProduct.color)
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedColors = await db.gatherColors()
@@ -211,21 +300,22 @@ test('gatherColors', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherColors')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
 test('gatherMaterials', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const expectedMaterials = [testProduct.material, testProduct1.material]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const expectedMaterials = [testProduct.material, secondTestProduct.material]
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedMaterials = await db.gatherMaterials()
@@ -235,51 +325,53 @@ test('gatherMaterials', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherMaterials')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
-test.skip('gatherPlacesOfInvoices', async t => {
+test('gatherPlacesOfInvoices', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
+    const testProducts = [testProduct, secondTestProduct]
     const expectedPlacesOfInvoice = [
       testProduct.placeOfInvoice,
-      testProduct1.placeOfInvoice
+      secondTestProduct.placeOfInvoice
     ]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedPlacesOfInvoice = await db.gatherPlacesOfInvoice()
+    const savedPlacesOfInvoice = await db.gatherPlacesOfInvoices()
     t.deepEqual(
       _.difference(expectedPlacesOfInvoice, savedPlacesOfInvoice),
       [],
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherPlacesOfInvoice')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
-test.skip('gatherPlacesOfPurchases', async t => {
+test('gatherPlacesOfPurchases', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
+    const testProducts = [testProduct, secondTestProduct]
     const expectedPlacesOfPurchases = [
       testProduct.placeOfPurchases,
-      testProduct1.placeOfPurchases
+      secondTestProduct.placeOfPurchases
     ]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedPlacesOfPurchases = await db.gatherPlacesOfPurchases()
@@ -289,21 +381,22 @@ test.skip('gatherPlacesOfPurchases', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherPlacesOfPurchases')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
-test.skip('gatherShops', async t => {
+test('gatherShops', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const expectedShops = [testProduct.shop, testProduct1.shop]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const expectedShops = [testProduct.shop, secondTestProduct.shop]
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedShops = await db.gatherShops()
@@ -313,21 +406,22 @@ test.skip('gatherShops', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherShops')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
 test.skip('gatherTypes', async t => {
   let idsToCleanup = []
-  t.plan(1)
+  t.plan(2)
 
   try {
-    const testProducts = [testProduct, testProduct1]
-    const expectedTypes = [testProduct.type, testProduct1.type]
-    const ids = await db.addProducts([testProduct, testProduct1])
+    const testProducts = [testProduct, secondTestProduct]
+    const expectedTypes = [testProduct.type, secondTestProduct.type]
+    const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
     const savedTypes = await db.gatherTypes()
@@ -337,10 +431,11 @@ test.skip('gatherTypes', async t => {
       'the difference of the saved and expected values should be empty'
     )
   } catch (err) {
-    handleError(t, 'Error happened in gatherTypes')(err)
+    console.error(err)
+    process.exit(1)
   } finally {
     await cleanup(idsToCleanup)
-    t.end()
+    t.pass('db clean')
   }
 })
 
