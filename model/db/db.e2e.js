@@ -368,8 +368,8 @@ test('gatherPlacesOfPurchases', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedPlacesOfPurchases = [
-      testProduct.placeOfPurchases,
-      secondTestProduct.placeOfPurchases
+      testProduct.placeOfPurchase,
+      secondTestProduct.placeOfPurchase
     ]
     const ids = await db.addProducts([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
