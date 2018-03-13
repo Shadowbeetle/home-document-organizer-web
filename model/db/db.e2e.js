@@ -220,7 +220,7 @@ test('getInvoiceById', async t => {
       .value()
 
     t.deepEqual(
-      _.difference(savedProducts, testProducts),
+      _.differenceWith(savedProducts, testProducts, _.isEqual),
       [],
       'the difference of the saved and expected values should be empty'
     )
