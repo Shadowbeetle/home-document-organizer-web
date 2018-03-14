@@ -1,8 +1,8 @@
 const test = require('tape')
 const _ = require('lodash')
 const whyNotEqual = require('is-equal/why')
-const db = require('./')
-const knex = require('./knex')
+const Product = require('./')
+const knex = require('../knex')
 
 const handleError = (t, message) => err => {
   console.error(err.message)
@@ -13,7 +13,7 @@ const handleError = (t, message) => err => {
 
 const cleanup = async (ids, t) => {
   try {
-    return await knex(db._PRODUCT_TABLE).del().whereIn('id', ids)
+    return await knex(Product.TABLE_NAME).del().whereIn('id', ids)
   } catch (err) {
     console.error('Could not cleanup db after test')
     console.error(err)
@@ -77,19 +77,19 @@ const expectedRow = {
 
 test('cleanDb', async t => {
   t.plan(1)
-  await knex(db._PRODUCT_TABLE).truncate()
+  await knex(Product.TABLE_NAME).truncate()
   t.pass('initial db clean')
 })
 
-test('addProduct', async t => {
+test('add', async t => {
   let idsToCleanup = []
   t.plan(3)
 
   try {
-    const ids = await db.addProduct(testProduct)
+    const ids = await Product.add(testProduct)
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const rows = await knex(db._PRODUCT_TABLE).select('*')
+    const rows = await knex(Product.TABLE_NAME).select('*')
     const savedProduct = _.chain(rows[0])
       .omit(['updated_at', 'created_at', 'id'])
       .value()
@@ -110,7 +110,7 @@ test('addProduct', async t => {
   }
 })
 
-test('deleteProduct', async t => {
+test('delete', async t => {
   t.plan(3)
   const id0 = 0
   const id1 = 1
@@ -121,10 +121,10 @@ test('deleteProduct', async t => {
   })
 
   try {
-    await db.addProducts([testProductWithId, secondTestProductWithId])
-    await db.deleteProductById(secondTestProductWithId.id)
+    await Product.addMany([testProductWithId, secondTestProductWithId])
+    await Product.deleteById(secondTestProductWithId.id)
 
-    const rows = await knex(db._PRODUCT_TABLE).select('*')
+    const rows = await knex(Product.TABLE_NAME).select('*')
     const savedProduct = _.chain(rows[0])
       .omit(['updated_at', 'created_at', 'id'])
       .value()
@@ -146,16 +146,16 @@ test('deleteProduct', async t => {
   }
 })
 
-test('updateProduct', async t => {
+test('update', async t => {
   t.plan(2)
   let ids
   try {
-    ids = await db.addProduct(testProduct)
+    ids = await Product.add(testProduct)
     const id = ids[0]
     const updatedProduct = Object.assign({}, testProduct, { id })
-    await db.updateProduct(updatedProduct)
+    await Product.update(updatedProduct)
 
-    const product = await db.getProductById(id)
+    const product = await Product.getById(id)
     const savedProduct = _.chain(product)
       .omit(['updatedAt', 'createdAt'])
       .value()
@@ -176,16 +176,16 @@ test('updateProduct', async t => {
   }
 })
 
-test('getProductById', async t => {
+test('getById', async t => {
   let idsToCleanup = []
   t.plan(2)
 
   try {
-    const ids = await db.addProduct(testProduct)
+    const ids = await Product.add(testProduct)
     idsToCleanup = idsToCleanup.concat(ids)
     const id = ids[0]
 
-    const product = await db.getProductById(id)
+    const product = await Product.getById(id)
     const savedProduct = _.chain(product)
       .omit(['updatedAt', 'createdAt', 'id'])
       .value()
@@ -211,10 +211,10 @@ test('getInvoiceById', async t => {
 
   try {
     const testProducts = [testProduct, secondTestProduct]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const products = await db.getInvoiceById(testProduct.invoiceId)
+    const products = await Product.getInvoiceById(testProduct.invoiceId)
     const savedProducts = _.chain(products)
       .map(p => _.omit(p, ['updatedAt', 'createdAt', 'id']))
       .value()
@@ -240,10 +240,10 @@ test('gatherBrands', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedBrands = [testProduct.brand, secondTestProduct.brand]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedBrands = await db.gatherBrands()
+    const savedBrands = await Product.gatherBrands()
     t.deepEqual(
       _.difference(expectedBrands, savedBrands),
       [],
@@ -265,10 +265,10 @@ test('gatherClasses', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedClasses = [testProduct.class, secondTestProduct.class]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedClasses = await db.gatherClasses()
+    const savedClasses = await Product.gatherClasses()
     t.deepEqual(
       _.difference(expectedClasses, savedClasses),
       [],
@@ -290,10 +290,10 @@ test('gatherColors', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedColors = testProduct.color.concat(secondTestProduct.color)
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedColors = await db.gatherColors()
+    const savedColors = await Product.gatherColors()
     t.deepEqual(
       _.difference(expectedColors, savedColors),
       [],
@@ -315,10 +315,10 @@ test('gatherMaterials', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedMaterials = [testProduct.material, secondTestProduct.material]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedMaterials = await db.gatherMaterials()
+    const savedMaterials = await Product.gatherMaterials()
     t.deepEqual(
       _.difference(expectedMaterials, savedMaterials),
       [],
@@ -343,10 +343,10 @@ test('gatherPlacesOfInvoices', async t => {
       testProduct.placeOfInvoice,
       secondTestProduct.placeOfInvoice
     ]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedPlacesOfInvoice = await db.gatherPlacesOfInvoices()
+    const savedPlacesOfInvoice = await Product.gatherPlacesOfInvoices()
     t.deepEqual(
       _.difference(expectedPlacesOfInvoice, savedPlacesOfInvoice),
       [],
@@ -371,10 +371,10 @@ test('gatherPlacesOfPurchases', async t => {
       testProduct.placeOfPurchase,
       secondTestProduct.placeOfPurchase
     ]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedPlacesOfPurchases = await db.gatherPlacesOfPurchases()
+    const savedPlacesOfPurchases = await Product.gatherPlacesOfPurchases()
     t.deepEqual(
       _.difference(expectedPlacesOfPurchases, savedPlacesOfPurchases),
       [],
@@ -396,10 +396,10 @@ test('gatherShops', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedShops = [testProduct.shop, secondTestProduct.shop]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedShops = await db.gatherShops()
+    const savedShops = await Product.gatherShops()
     t.deepEqual(
       _.difference(expectedShops, savedShops),
       [],
@@ -421,10 +421,10 @@ test.skip('gatherTypes', async t => {
   try {
     const testProducts = [testProduct, secondTestProduct]
     const expectedTypes = [testProduct.type, secondTestProduct.type]
-    const ids = await db.addProducts([testProduct, secondTestProduct])
+    const ids = await Product.addMany([testProduct, secondTestProduct])
     idsToCleanup = idsToCleanup.concat(ids)
 
-    const savedTypes = await db.gatherTypes()
+    const savedTypes = await Product.gatherTypes()
     t.deepEqual(
       _.difference(expectedTypes, savedTypes),
       [],

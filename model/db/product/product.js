@@ -1,32 +1,32 @@
 const _ = require('lodash')
-const dbConfig = require('../../config/postgres')
-const knex = require('../db/knex')
+const dbConfig = require('../../../config/postgres')
+const knex = require('../../db/knex')
 
-const PRODUCT_TABLE = 'products'
+const TABLE_NAME = 'products'
 
-function addProduct (product) {
+function add (product) {
   const row = createRowFromObject(product)
-  return knex(PRODUCT_TABLE).insert(row).returning('id')
+  return knex(TABLE_NAME).insert(row).returning('id')
 }
 
-function addProducts (products) {
+function addMany (products) {
   const rows = _.map(products, createRowFromObject)
-  return knex(PRODUCT_TABLE).insert(rows).returning('id')
+  return knex(TABLE_NAME).insert(rows).returning('id')
 }
 
-function deleteProductById (id) {
-  return knex(PRODUCT_TABLE).del().where({ id })
+function deleteById (id) {
+  return knex(TABLE_NAME).del().where({ id })
 }
 
-function updateProduct (product) {
+function update (product) {
   const row = createRowFromObject(product)
-  return knex(PRODUCT_TABLE).update(row).where({ id: product.id })
+  return knex(TABLE_NAME).update(row).where({ id: product.id })
 }
 
-async function getProductById (id) {
+async function getById (id) {
   let row
   try {
-    row = await knex(PRODUCT_TABLE).where({ id }).first()
+    row = await knex(TABLE_NAME).where({ id }).first()
   } catch (err) {
     console.error('Could not get product by id')
     throw err
@@ -37,7 +37,7 @@ async function getProductById (id) {
 async function getInvoiceById (invoice_id) {
   let rows
   try {
-    rows = await knex(PRODUCT_TABLE).where({ invoice_id })
+    rows = await knex(TABLE_NAME).where({ invoice_id })
   } catch (err) {
     console.error('Could not get product by id')
     throw err
@@ -48,7 +48,7 @@ async function getInvoiceById (invoice_id) {
 async function gatherValuesOfColumn (columnName) {
   let products
   try {
-    products = await knex(PRODUCT_TABLE).select(columnName).distinct()
+    products = await knex(TABLE_NAME).select(columnName).distinct()
   } catch (err) {
     console.error(`Could not gather ${columnName}`)
     throw err
@@ -67,7 +67,7 @@ function gatherClasses () {
 async function gatherColors () {
   let products
   try {
-    products = await knex(PRODUCT_TABLE)
+    products = await knex(TABLE_NAME)
       .select(knex.raw('UNNEST(color) as color'))
       .distinct()
   } catch (err) {
@@ -107,12 +107,12 @@ function createProductObject (row) {
 }
 
 module.exports = {
-  _PRODUCT_TABLE: PRODUCT_TABLE,
-  addProduct,
-  addProducts,
-  deleteProductById,
-  updateProduct,
-  getProductById,
+  TABLE_NAME,
+  add,
+  addMany,
+  deleteById,
+  update,
+  getById,
   getInvoiceById,
   gatherBrands,
   gatherClasses,
