@@ -2,20 +2,13 @@
 version: '3.1'
 
 services:
-
-  db:
-    image: postgres
-    restart: always
+  mongodb:
+    image: bitnami/mongodb
+    container_name: mongodb
     environment:
-      POSTGRES_PASSWORD: pa55word
-      POSTGRES_DB: document_organizer
-    ports: 
-      - 5432:5432
-
-  adminer:
-    image: adminer
-    restart: always
+      - MONGODB_USERNAME=mongo-user
+      - MONGODB_PASSWORD=password123
+      - MONGODB_DATABASE=DocumentOrganizer
     ports:
-      - 8888:8080
-  
+      - 27017:27017
   
