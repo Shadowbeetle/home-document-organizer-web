@@ -18,8 +18,12 @@
   "author": "Tamás Kadlecsik",
   "license": "ISC",
   "devDependencies": {
+    "@types/bcrypt": "1.0.0",
+    "@types/mongoose": "5.0.7",
+    "@types/uuid": "3.4.3",
     "dotenv": "5.0.0",
     "eslint": "4.18.0",
+    "eslint-plugin-promise": "3.7.0",
     "eslint-plugin-standard": "3.0.1",
     "is-equal": "1.5.5",
     "mkdirp": "0.5.1",
@@ -29,13 +33,13 @@
     "tape": "4.9.0"
   },
   "dependencies": {
+    "bcrypt": "1.0.3",
     "dedent": "0.7.0",
     "express": "4.16.3",
     "joi": "13.1.2",
     "knex": "0.14.4",
     "lodash": "4.17.5",
-    "pg": "7.4.1",
-    "pg-connection-string": "2.0.0"
+    "mongoose": "5.0.10"
   },
   "prettier": {
     "prettier.eslintIntegration": true
