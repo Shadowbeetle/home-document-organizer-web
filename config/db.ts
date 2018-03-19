@@ -1,6 +1,7 @@
 'use strict'
-const joi = require('joi')
-const schema = joi
+import joi = require('joi')
+import { ObjectSchema } from 'joi'
+const schema: ObjectSchema = joi
   .object({
     MONGO_URI: joi.string().uri({ scheme: 'mongodb' }).required()
   })
@@ -13,12 +14,6 @@ if (error) {
   throw new Error(`Config validation error: ${error.message}`)
 }
 
-const envVars = {
-  MONGO_URI: process.env.MONGO_URI
-}
-
-module.exports = {
-  mongo: {
-    uri: envVars.MONGO_URI
-  }
+export default {
+  uri: envVars.MONGO_URI as string
 }

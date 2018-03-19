@@ -7,7 +7,7 @@ import { ObjectId } from 'bson';
 import { DocumentQuery, Document, Model } from 'mongoose';
 const Schema = mongoose.Schema
 
-const MODEL_NAME = 'user'
+export const MODEL_NAME = 'users'
 
 export type User = {
   name: string,
@@ -38,14 +38,14 @@ export interface IUserModel extends Model<UserDocument> {
   register(newUser: User): Promise<UserDocument | null>
   unregister(id: ObjectId | string): UserQuery
   updateById(userId: ObjectId | string, data: UserData): UserQuery
-  addDrawer(drawerId: ObjectId | string, userId: ObjectId | string): Promise<UserDocument | null>
+  addDrawer(drawerId: ObjectId | string, userId: ObjectId | string): UserQuery
 }
 
 const userSchema = new Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
-  drawers: { tpye: [Schema.Types.ObjectId], index: true }
+  drawers: [{ tpye: Schema.Types.ObjectId }]
 })
 
 const UserModel = mongoose.model(MODEL_NAME, userSchema) as IUserModel
@@ -74,7 +74,7 @@ UserModel.updateById = function (userId, data) {
   return UserModel.findOneAndUpdate({ _id: userId }, { $set: data }, { new: true })
 }
 
-UserModel.addDrawer = async function (drawerId, userId) {
+UserModel.addDrawer = function (drawerId, userId) {
   return UserModel.findOneAndUpdate(
     { _id: userId },
     { $push: { drawers: drawerId } }

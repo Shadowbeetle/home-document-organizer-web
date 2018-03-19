@@ -19,7 +19,9 @@
   "license": "ISC",
   "devDependencies": {
     "@types/bcrypt": "1.0.0",
+    "@types/joi": "13.0.6",
     "@types/mongoose": "5.0.7",
+    "@types/tape": "4.2.32",
     "@types/uuid": "3.4.3",
     "dotenv": "5.0.0",
     "eslint": "4.18.0",

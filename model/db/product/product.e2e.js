@@ -439,7 +439,7 @@ test.skip('gatherTypes', async t => {
   }
 })
 
-test('exit', t => {
+test('close db connection', t => {
   t.end()
   process.exit(0)
 })
