@@ -7,7 +7,7 @@ import { ObjectId } from 'bson';
 import { DocumentQuery, Document, Model } from 'mongoose';
 const Schema = mongoose.Schema
 
-export const MODEL_NAME = 'users'
+export const MODEL_NAME = 'Users'
 
 export type User = {
   name: string,
@@ -45,7 +45,7 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
-  drawers: [{ tpye: Schema.Types.ObjectId }]
+  drawers: [{ tpye: Schema.Types.ObjectId, ref: 'Drawers' }]
 })
 
 const UserModel = mongoose.model(MODEL_NAME, userSchema) as IUserModel

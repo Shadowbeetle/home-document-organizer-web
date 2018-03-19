@@ -2,10 +2,9 @@
 require('../mongoose')
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
-const uuid = require('uuid/v4')
 const Schema = mongoose.Schema
 
-const MODEL_NAME = 'drawer'
+const MODEL_NAME = 'Drawers'
 
 /**
  * @typedef Drawer
