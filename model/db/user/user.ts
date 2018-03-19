@@ -30,15 +30,15 @@ export interface UserDocument extends Document {
   drawers: ObjectId[] | string[]
 }
 
-export type UserQuery = DocumentQuery<UserDocument, UserDocument>
+export type UserQuery = DocumentQuery<UserDocument | null, UserDocument>
 
-export interface UserModel extends Model<UserDocument> {
+export interface IUserModel extends Model<UserDocument> {
   findByEmail(email: string): UserQuery
   findById(id: ObjectId | string): UserQuery
-  register(newUser: User): Promise<UserDocument>
+  register(newUser: User): Promise<UserDocument | null>
   unregister(id: ObjectId | string): UserQuery
   updateById(userId: ObjectId | string, data: UserData): UserQuery
-  addDrawer(drawerId: ObjectId | string, userId: ObjectId | string): Promise<UserDocument>
+  addDrawer(drawerId: ObjectId | string, userId: ObjectId | string): Promise<UserDocument | null>
 }
 
 const userSchema = new Schema({
@@ -48,37 +48,37 @@ const userSchema = new Schema({
   drawers: { tpye: [Schema.Types.ObjectId], index: true }
 })
 
-const User = mongoose.model(MODEL_NAME, userSchema) as UserModel
+const UserModel = mongoose.model(MODEL_NAME, userSchema) as IUserModel
 
-User.findByEmail = function (email) {
-  return User.findOne({ email })
+UserModel.findByEmail = function (email) {
+  return UserModel.findOne({ email })
 }
 
-User.findById = function (id) {
-  const userPromise = User.findByEmail('emil')
+UserModel.findById = function (id) {
+  const userPromise = UserModel.findByEmail('emil')
   userPromise.then((a) => console.log())
-  return User.findOne({ _id: id })
+  return UserModel.findOne({ _id: id })
 }
 
 const SALT_ROUNDS = 10
-User.register = async function (newUser) {
+UserModel.register = async function (newUser) {
   const hash = await bcrypt.hash(newUser.password, SALT_ROUNDS)
-  return new User(Object.assign(newUser, { password: hash })).save()
+  return new UserModel(Object.assign(newUser, { password: hash })).save()
 }
 
-User.unregister = function (id) {
-  return User.findOneAndRemove({ _id: id })
+UserModel.unregister = function (id) {
+  return UserModel.findOneAndRemove({ _id: id })
 }
 
-User.updateById = function (userId, data) {
-  return User.findOneAndUpdate({ _id: userId }, { $set: data }, { new: true })
+UserModel.updateById = function (userId, data) {
+  return UserModel.findOneAndUpdate({ _id: userId }, { $set: data }, { new: true })
 }
 
-User.addDrawer = async function (drawerId, userId) {
-  return User.findOneAndUpdate(
+UserModel.addDrawer = async function (drawerId, userId) {
+  return UserModel.findOneAndUpdate(
     { _id: userId },
     { $push: { drawers: drawerId } }
   )
 }
 
-export default User
+export default UserModel
