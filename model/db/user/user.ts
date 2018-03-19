@@ -13,7 +13,7 @@ export type User = {
   name: string,
   password: string,
   email: string,
-  drawers: ObjectId[] | string[]
+  drawers?: ObjectId[] | string[]
 }
 
 export type UserData = {
@@ -27,7 +27,7 @@ export interface UserDocument extends Document {
   name: string,
   password: string,
   email: string,
-  drawers: ObjectId[] | string[]
+  drawers?: ObjectId[] | string[]
 }
 
 export type UserQuery = DocumentQuery<UserDocument | null, UserDocument>
@@ -45,7 +45,7 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
-  drawers: [{ tpye: Schema.Types.ObjectId, ref: 'Drawers' }]
+  drawers: [{ tpye: Schema.Types.ObjectId }] // TODO add ref to Drawers
 })
 
 const UserModel = mongoose.model(MODEL_NAME, userSchema) as IUserModel
@@ -63,7 +63,7 @@ UserModel.findById = function (id) {
 const SALT_ROUNDS = 10
 UserModel.register = async function (newUser) {
   const hash = await bcrypt.hash(newUser.password, SALT_ROUNDS)
-  return new UserModel(Object.assign(newUser, { password: hash })).save()
+  return new UserModel(Object.assign({}, newUser, { password: hash })).save()
 }
 
 UserModel.unregister = function (id) {

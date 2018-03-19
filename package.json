@@ -20,6 +20,7 @@
   "devDependencies": {
     "@types/bcrypt": "1.0.0",
     "@types/joi": "13.0.6",
+    "@types/lodash": "4.14.105",
     "@types/mongoose": "5.0.7",
     "@types/tape": "4.2.32",
     "@types/uuid": "3.4.3",
