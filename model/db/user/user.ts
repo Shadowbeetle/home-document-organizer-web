@@ -45,7 +45,7 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
-  drawers: [{ tpye: Schema.Types.ObjectId }] // TODO add ref to Drawers
+  drawers: [{ tpye: Schema.Types.ObjectId }] // TODO: add ref to Drawers
 })
 
 const UserModel = mongoose.model(MODEL_NAME, userSchema) as IUserModel
