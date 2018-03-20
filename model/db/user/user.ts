@@ -5,7 +5,7 @@ import bcrypt = require('bcrypt')
 import uuid = require('uuid/v4')
 import _ = require('lodash')
 import { ObjectId } from 'bson';
-import { DocumentQuery, Document, Model } from 'mongoose';
+import { DocumentQuery, Document, Model, Query } from 'mongoose';
 const Schema = mongoose.Schema
 
 export const MODEL_NAME = 'Users'
@@ -15,20 +15,26 @@ export type User = {
   password: string,
   email: string,
   drawers?: ObjectId[] | string[]
+  createdAt?: Date | number,
+  updatedAt?: Date | number
 }
 
 export type UserData = {
   name?: string,
   password?: string,
   email?: string,
-  drawers?: ObjectId[] | string[]
+  drawers?: ObjectId[] | string[],
+  createdAt?: Date | number,
+  updatedAt?: Date | number
 }
 
 export interface UserDocument extends Document {
   name: string,
   password: string,
   email: string,
-  drawers?: ObjectId[] | string[]
+  drawers?: ObjectId[] | string[],
+  createdAt: Date
+  updatedAt: Date
 }
 
 export type UserQuery = DocumentQuery<UserDocument | null, UserDocument>
@@ -46,13 +52,40 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
-  drawers: [{ tpye: Schema.Types.ObjectId }] // TODO: add ref to Drawers
+  drawers: [{ tpye: Schema.Types.ObjectId }], // TODO: add ref to Drawers
+  createdAt: { type: Date, default: Date.now }
 })
 
 const SALT_ROUNDS = 10
-userSchema.pre('save', async function (this: UserDocument, next) {
+userSchema.pre('save', async function (this: UserDocument) {
   this.email = this.email.toLowerCase()
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
+})
+
+async function formatUpdateData(userData: UserData): Promise<UserData> {
+  userData.updatedAt = Date.now()
+  if (userData.email) {
+    userData.email = userData.email.toLowerCase()
+  }
+
+  if (userData.password) {
+    userData.password = await bcrypt.hash(userData.password, SALT_ROUNDS)
+  }
+
+  return userData
+}
+
+userSchema.pre('update', async function (this: UserQuery) {
+  const { $set: update } = await this.getUpdate()
+  const data = formatUpdateData(update)
+  this.update({}, { $set: data })
+  console.log()
+})
+
+userSchema.pre('findOneAndUpdate', async function (this: UserQuery) {
+  const { $set: update } = this.getUpdate()
+  const data = await formatUpdateData(update)
+  this.findOneAndUpdate({}, { $set: data })
 })
 
 const UserModel = <IUserModel>mongoose.model(MODEL_NAME, userSchema)
@@ -76,16 +109,7 @@ UserModel.unregister = function (id) {
 }
 
 UserModel.updateById = async function (userId, data) {
-  const update = _.clone(data)
-  if (data.email) {
-    update.email = data.email.toLowerCase()
-  }
-
-  if (data.password) {
-    update.password = await bcrypt.hash(data.password, SALT_ROUNDS)
-  }
-
-  return UserModel.findOneAndUpdate({ _id: userId }, { $set: update }, { new: true })
+  return UserModel.findOneAndUpdate({ _id: userId }, { $set: data }, { new: true })
 }
 
 UserModel.addDrawer = function (drawerId, userId) {

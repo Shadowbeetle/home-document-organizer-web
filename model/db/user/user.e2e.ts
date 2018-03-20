@@ -51,7 +51,7 @@ async function cleanup() {
 }
 
 function stripUser(user: User): StrippedUser {
-  return _.omit(user, ['password', '_id', 'drawers', '__v'])
+  return _.omit(user, ['password', '_id', 'drawers', '__v', 'createdAt', 'updatedAt'])
 }
 
 test('clean db', async t => {
@@ -75,6 +75,7 @@ test('register', async t => {
   } catch (err) {
     t.fail('Could not register Test user')
     console.error(err)
+    process.exit(1)
   }
 
   savedUserDocument = savedUserDocument || emptyUserDocument
@@ -90,6 +91,7 @@ test('register', async t => {
   } catch (err) {
     t.fail('Could not compare passwords')
     console.error(err)
+    process.exit(1)
   }
 
   await cleanup()
@@ -107,6 +109,7 @@ test('unregister', async t => {
   } catch (err) {
     t.fail('Could not register Test User')
     console.error(err)
+    process.exit(1)
   }
 
   try {
@@ -115,6 +118,7 @@ test('unregister', async t => {
   } catch (err) {
     t.fail('Could not register Test User')
     console.error(err)
+    process.exit(1)
   }
 
   t.notEqual(testUserId, '', 'Register should not return empty user id')
@@ -125,6 +129,7 @@ test('unregister', async t => {
   } catch (err) {
     t.fail('Could not unregister Test User')
     console.error(err)
+    process.exit(1)
   }
 
   let otherSavedUserDocuments
@@ -133,6 +138,7 @@ test('unregister', async t => {
   } catch (err) {
     t.fail('Could not get Other User')
     console.error(err)
+    process.exit(1)
   }
 
   otherSavedUserDocuments = otherSavedUserDocuments || [emptyUserDocument]
@@ -158,6 +164,7 @@ test('update', async t => {
   } catch (err) {
     t.fail('Could not register Test User')
     console.error(err)
+    process.exit(1)
   }
 
   t.notEqual(testUserId, '', 'Register should not return empty id')
@@ -165,8 +172,9 @@ test('update', async t => {
   try {
     await UserModel.updateById(testUserId, otherTestUser)
   } catch (err) {
-    t.fail('Could not unregister Test User')
+    t.fail('Could not update Test User')
     console.error(err)
+    process.exit(1)
   }
 
   let updatedUserDocuments
@@ -175,6 +183,7 @@ test('update', async t => {
   } catch (err) {
     t.fail('Could not get Other User')
     console.error(err)
+    process.exit(1)
   }
 
   updatedUserDocuments = updatedUserDocuments || [emptyUserDocument]
@@ -192,6 +201,7 @@ test('update', async t => {
   } catch (err) {
     t.fail('Could not compare passwords')
     console.error(err)
+    process.exit(1)
   }
 
   await cleanup()
