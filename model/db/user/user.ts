@@ -3,6 +3,7 @@ import '../mongoose'
 import mongoose = require('mongoose')
 import bcrypt = require('bcrypt')
 import uuid = require('uuid/v4')
+import _ = require('lodash')
 import { ObjectId } from 'bson';
 import { DocumentQuery, Document, Model } from 'mongoose';
 const Schema = mongoose.Schema
@@ -37,7 +38,7 @@ export interface IUserModel extends Model<UserDocument> {
   findById(id: ObjectId | string): UserQuery
   register(newUser: User): Promise<UserDocument | null>
   unregister(id: ObjectId | string): UserQuery
-  updateById(userId: ObjectId | string, data: UserData): UserQuery
+  updateById(userId: ObjectId | string, data: UserData): Promise<UserDocument | null>
   addDrawer(drawerId: ObjectId | string, userId: ObjectId | string): UserQuery
 }
 
@@ -53,10 +54,6 @@ userSchema.pre('save', async function (this: UserDocument, next) {
   this.email = this.email.toLowerCase()
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
 })
-
-// userSchema.pre('update', async function (error, res, next) {
-
-// })
 
 const UserModel = <IUserModel>mongoose.model(MODEL_NAME, userSchema)
 
@@ -78,8 +75,17 @@ UserModel.unregister = function (id) {
   return UserModel.findOneAndRemove({ _id: id })
 }
 
-UserModel.updateById = function (userId, data) {
-  return UserModel.findOneAndUpdate({ _id: userId }, { $set: data }, { new: true })
+UserModel.updateById = async function (userId, data) {
+  const update = _.clone(data)
+  if (data.email) {
+    update.email = data.email.toLowerCase()
+  }
+
+  if (data.password) {
+    update.password = await bcrypt.hash(data.password, SALT_ROUNDS)
+  }
+
+  return UserModel.findOneAndUpdate({ _id: userId }, { $set: update }, { new: true })
 }
 
 UserModel.addDrawer = function (drawerId, userId) {

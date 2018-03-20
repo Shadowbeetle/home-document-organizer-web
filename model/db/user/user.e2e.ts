@@ -54,7 +54,7 @@ function stripUser(user: User): StrippedUser {
   return _.omit(user, ['password', '_id', 'drawers', '__v'])
 }
 
-test('clean db', async (t: Test) => {
+test('clean db', async t => {
   t.plan(1)
   try {
     await UserModel.remove({})
@@ -66,7 +66,7 @@ test('clean db', async (t: Test) => {
   t.pass('Initial db clean')
 })
 
-test('register', async (t: Test) => {
+test('register', async t => {
   t.plan(4)
 
   let savedUserDocument
@@ -86,7 +86,7 @@ test('register', async (t: Test) => {
 
   try {
     const doPasswordsMatch = await bcrypt.compare(testUser.password, savedUser.password)
-    t.ok(doPasswordsMatch)
+    t.ok(doPasswordsMatch, 'Passwords should match')
   } catch (err) {
     t.fail('Could not compare passwords')
     console.error(err)
@@ -96,11 +96,11 @@ test('register', async (t: Test) => {
   t.pass('Db is clean')
 })
 
-test('unregister', async (t: Test) => {
-  t.plan(4)
+test('unregister', async t => {
+  t.plan(6)
 
   let testUserId = ''
-  let otherSavedUserId = ''
+  let otherTestUserId = ''
   try {
     const savedUserDocument = await UserModel.register(testUser) || { _id: '' }
     testUserId = savedUserDocument._id
@@ -111,15 +111,15 @@ test('unregister', async (t: Test) => {
 
   try {
     const otherSavedUserDocument = await UserModel.register(otherTestUser) || { _id: '' }
-    otherSavedUserId = otherSavedUserDocument._id
+    otherTestUserId = otherSavedUserDocument._id
   } catch (err) {
     t.fail('Could not register Test User')
     console.error(err)
   }
 
-  if (testUserId === '') {
-    t.fail('Register returned empty id')
-  }
+  t.notEqual(testUserId, '', 'Register should not return empty user id')
+  t.notEqual(otherTestUserId, '', 'Register should not return empty user id for toher user')
+
   try {
     await UserModel.unregister(testUserId)
   } catch (err) {
@@ -148,7 +148,57 @@ test('unregister', async (t: Test) => {
   t.pass('Db is clean')
 })
 
-test('close db connection', async (t: Test) => {
+test('update', async t => {
+  t.plan(6)
+
+  let testUserId = ''
+  try {
+    const savedUserDocument = await UserModel.register(testUser) || { _id: '' }
+    testUserId = savedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+  }
+
+  t.notEqual(testUserId, '', 'Register should not return empty id')
+
+  try {
+    await UserModel.updateById(testUserId, otherTestUser)
+  } catch (err) {
+    t.fail('Could not unregister Test User')
+    console.error(err)
+  }
+
+  let updatedUserDocuments
+  try {
+    updatedUserDocuments = await UserModel.find({ _id: testUserId })
+  } catch (err) {
+    t.fail('Could not get Other User')
+    console.error(err)
+  }
+
+  updatedUserDocuments = updatedUserDocuments || [emptyUserDocument]
+  t.equal(updatedUserDocuments.length, 1, 'Should have only one document')
+
+  const updatedUserDocument = updatedUserDocuments[0]
+  t.notEqual(updatedUserDocument, emptyUserDocument, 'Should not return an empty document')
+
+  const strippedOtherSavedUser = stripUser(updatedUserDocument.toObject())
+  t.deepEquals(strippedOtherSavedUser, otherTestUserWithoutPassword)
+
+  try {
+    const doPasswordsMatch = await bcrypt.compare(otherTestUser.password, updatedUserDocument.password)
+    t.ok(doPasswordsMatch, 'Passwords should match')
+  } catch (err) {
+    t.fail('Could not compare passwords')
+    console.error(err)
+  }
+
+  await cleanup()
+  t.pass('Db is clean')
+})
+
+test('close db connection', async t => {
   await mongoose.connection.close()
   t.end()
 })
