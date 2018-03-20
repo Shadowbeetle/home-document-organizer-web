@@ -15,5 +15,5 @@ if (error) {
 }
 
 export default {
-  uri: envVars.MONGO_URI as string
+  uri: <string>envVars.MONGO_URI
 }

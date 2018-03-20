@@ -1,5 +1,5 @@
-import UserModel, { User } from './'
-import { MODEL_NAME } from './'
+import UserModel, { User, IUserModel } from './'
+import { MODEL_NAME, UserDocument, UserQuery } from './'
 import test = require('tape')
 import { Test } from 'tape'
 import mongoose = require('mongoose')
@@ -22,7 +22,15 @@ const testUser = {
 
 const testUserWithoutPassword = _.omit(testUser, 'password')
 
-const emptyUserModel = {
+const otherTestUser = {
+  name: 'Other User',
+  email: 'other@mail.com',
+  password: 'other1234567'
+}
+
+const otherTestUserWithoutPassword = _.omit(otherTestUser, 'password')
+
+const emptyUserDocument = <UserDocument>{
   toObject(): User {
     return {
       name: '',
@@ -59,26 +67,21 @@ test('clean db', async (t: Test) => {
 })
 
 test('register', async (t: Test) => {
-  t.plan(3)
+  t.plan(4)
 
-  let savedUserModel
+  let savedUserDocument
   try {
-    savedUserModel = await UserModel.register(testUser)
+    savedUserDocument = await UserModel.register(testUser)
   } catch (err) {
     t.fail('Could not register Test user')
     console.error(err)
   }
 
-  savedUserModel = savedUserModel ? savedUserModel : emptyUserModel
+  savedUserDocument = savedUserDocument || emptyUserDocument
+  t.notEqual(savedUserDocument, emptyUserDocument)
 
-  if (savedUserModel === emptyUserModel) {
-    throw new Error('Returned userModel is empty')
-  }
-
-  const savedUser = savedUserModel.toObject() as User
-
+  const savedUser = <User>savedUserDocument.toObject()
   const savedUserWithoutPassword = stripUser(savedUser)
-
   t.deepEqual(savedUserWithoutPassword, testUserWithoutPassword)
 
   try {
@@ -89,8 +92,59 @@ test('register', async (t: Test) => {
     console.error(err)
   }
 
-  await cleanup
+  await cleanup()
+  t.pass('Db is clean')
+})
 
+test('unregister', async (t: Test) => {
+  t.plan(4)
+
+  let testUserId = ''
+  let otherSavedUserId = ''
+  try {
+    const savedUserDocument = await UserModel.register(testUser) || { _id: '' }
+    testUserId = savedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+  }
+
+  try {
+    const otherSavedUserDocument = await UserModel.register(otherTestUser) || { _id: '' }
+    otherSavedUserId = otherSavedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+  }
+
+  if (testUserId === '') {
+    t.fail('Register returned empty id')
+  }
+  try {
+    await UserModel.unregister(testUserId)
+  } catch (err) {
+    t.fail('Could not unregister Test User')
+    console.error(err)
+  }
+
+  let otherSavedUserDocuments
+  try {
+    otherSavedUserDocuments = await UserModel.find({})
+  } catch (err) {
+    t.fail('Could not get Other User')
+    console.error(err)
+  }
+
+  otherSavedUserDocuments = otherSavedUserDocuments || [emptyUserDocument]
+  t.equal(otherSavedUserDocuments.length, 1, 'Should have only one document')
+
+  const otherSavedUserDocument = otherSavedUserDocuments[0]
+  t.notEqual(otherSavedUserDocument, emptyUserDocument, 'Should not return an empty document')
+
+  const strippedOtherSavedUser = stripUser(otherSavedUserDocument.toObject())
+  t.deepEquals(strippedOtherSavedUser, otherTestUserWithoutPassword)
+
+  await cleanup()
   t.pass('Db is clean')
 })
 

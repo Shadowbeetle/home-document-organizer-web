@@ -48,7 +48,7 @@ const userSchema = new Schema({
   drawers: [{ tpye: Schema.Types.ObjectId }] // TODO: add ref to Drawers
 })
 
-const UserModel = mongoose.model(MODEL_NAME, userSchema) as IUserModel
+const UserModel = <IUserModel>mongoose.model(MODEL_NAME, userSchema)
 
 UserModel.findByEmail = function (email) {
   return UserModel.findOne({ email })
