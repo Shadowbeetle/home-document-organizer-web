@@ -48,6 +48,16 @@ const userSchema = new Schema({
   drawers: [{ tpye: Schema.Types.ObjectId }] // TODO: add ref to Drawers
 })
 
+const SALT_ROUNDS = 10
+userSchema.pre('save', async function (this: UserDocument, next) {
+  this.email = this.email.toLowerCase()
+  this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
+})
+
+// userSchema.pre('update', async function (error, res, next) {
+
+// })
+
 const UserModel = <IUserModel>mongoose.model(MODEL_NAME, userSchema)
 
 UserModel.findByEmail = function (email) {
@@ -60,10 +70,8 @@ UserModel.findById = function (id) {
   return UserModel.findOne({ _id: id })
 }
 
-const SALT_ROUNDS = 10
 UserModel.register = async function (newUser) {
-  const hash = await bcrypt.hash(newUser.password, SALT_ROUNDS)
-  return new UserModel(Object.assign({}, newUser, { password: hash })).save()
+  return new UserModel(newUser).save()
 }
 
 UserModel.unregister = function (id) {
