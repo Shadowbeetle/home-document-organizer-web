@@ -53,7 +53,8 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
   drawers: [{ tpye: Schema.Types.ObjectId }], // TODO: add ref to Drawers
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 })
 
 const SALT_ROUNDS = 10
@@ -62,7 +63,8 @@ userSchema.pre('save', async function (this: UserDocument) {
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
 })
 
-async function formatUpdateData(userData: UserData): Promise<UserData> {
+async function formatUpdateData(userData: UserData | undefined): Promise<UserData> {
+  userData = userData || {}
   userData.updatedAt = Date.now()
   if (userData.email) {
     userData.email = userData.email.toLowerCase()
@@ -76,16 +78,21 @@ async function formatUpdateData(userData: UserData): Promise<UserData> {
 }
 
 userSchema.pre('update', async function (this: UserQuery) {
-  const { $set: update } = await this.getUpdate()
-  const data = formatUpdateData(update)
-  this.update({}, { $set: data })
-  console.log()
+  const update = this.getUpdate()
+  const $set = update.$set
+
+  const data = await formatUpdateData($set)
+  const modifiedUpdate = data ? Object.assign(update, { $set: data }) : update
+  this.update({}, modifiedUpdate)
 })
 
 userSchema.pre('findOneAndUpdate', async function (this: UserQuery) {
-  const { $set: update } = this.getUpdate()
-  const data = await formatUpdateData(update)
-  this.findOneAndUpdate({}, { $set: data })
+  const update = this.getUpdate()
+  const $set = update.$set
+
+  const data = await formatUpdateData($set)
+  const modifiedUpdate = data ? Object.assign(update, { $set: data }) : update
+  this.findOneAndUpdate({}, modifiedUpdate)
 })
 
 const UserModel = <IUserModel>mongoose.model(MODEL_NAME, userSchema)
@@ -112,10 +119,11 @@ UserModel.updateById = async function (userId, data) {
   return UserModel.findOneAndUpdate({ _id: userId }, { $set: data }, { new: true })
 }
 
-UserModel.addDrawer = function (drawerId, userId) {
+UserModel.addDrawer = function (userId, drawerId) {
   return UserModel.findOneAndUpdate(
     { _id: userId },
-    { $push: { drawers: drawerId } }
+    { $push: { drawers: drawerId } },
+    { new: true }
   )
 }
 

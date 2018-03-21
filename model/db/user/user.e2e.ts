@@ -12,6 +12,7 @@ type id = string | ObjectId
 type StrippedUser = {
   name: string,
   email: string,
+  drawers?: ObjectId[] | string[]
 }
 
 const testUser = {
@@ -39,6 +40,8 @@ const emptyUserDocument = <UserDocument>{
     }
   }
 }
+
+const emptyUser = emptyUserDocument.toObject()
 
 async function cleanup() {
   try {
@@ -154,7 +157,7 @@ test('unregister', async t => {
   t.pass('Db is clean')
 })
 
-test('update', async t => {
+test('update user', async t => {
   t.plan(6)
 
   let testUserId = ''
@@ -207,6 +210,150 @@ test('update', async t => {
   await cleanup()
   t.pass('Db is clean')
 })
+
+test('findByEmail', async t => {
+  t.plan(3)
+
+  let testUserId = ''
+  let otherTestUserId = ''
+  try {
+    const savedUserDocument = await UserModel.register(testUser) || { _id: '' }
+    testUserId = savedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  try {
+    const otherSavedUserDocument = await UserModel.register(otherTestUser) || { _id: '' }
+    otherTestUserId = otherSavedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  let foundUserQuery
+  try {
+    foundUserQuery = await <UserQuery>UserModel.findByEmail(otherTestUser.email)
+  } catch (err) {
+    t.fail('Could not get Other User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  foundUserQuery = foundUserQuery || emptyUserDocument
+
+  const foundUser = foundUserQuery.toObject()
+  t.notEqual(foundUser, emptyUser, 'Should not return an empty document')
+
+  const strippedFoundUser = stripUser(foundUser)
+  t.deepEquals(strippedFoundUser, otherTestUserWithoutPassword, 'Should return Other Test user')
+
+  await cleanup()
+  t.pass('Db is clean')
+})
+
+test('findById', async t => {
+  t.plan(3)
+
+  let testUserId = ''
+  let otherTestUserId = ''
+  try {
+    const savedUserDocument = await UserModel.register(testUser) || { _id: '' }
+    testUserId = savedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  try {
+    const otherSavedUserDocument = await UserModel.register(otherTestUser) || { _id: '' }
+    otherTestUserId = otherSavedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  let foundUserQuery
+  try {
+    foundUserQuery = await <UserQuery>UserModel.findById(otherTestUserId)
+  } catch (err) {
+    t.fail('Could not get Other User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  foundUserQuery = foundUserQuery || emptyUserDocument
+
+  const foundUser = foundUserQuery.toObject()
+  t.notEqual(foundUser, emptyUser, 'Should not return an empty document')
+
+  const strippedFoundUser = stripUser(foundUser)
+  t.deepEquals(strippedFoundUser, otherTestUserWithoutPassword, 'Should return Other Test user')
+
+  await cleanup()
+  t.pass('Db is clean')
+})
+
+test.skip('add one drawer', async t => { // TODO: fix when Drawer is implemented
+  t.plan(9)
+
+  const testDrawer = new ObjectId('5ab234ceb1bbb3582806dab1')
+  let testUserId = ''
+  try {
+    const savedUserDocument = await UserModel.register(testUser) || { _id: '' }
+    testUserId = savedUserDocument._id
+  } catch (err) {
+    t.fail('Could not register Test User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  t.notEqual(testUserId, '', 'Register should not return empty id')
+
+  try {
+    await UserModel.addDrawer(testUserId, testDrawer)
+  } catch (err) {
+    t.fail('Could not add drawer to Test User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  let updatedUserDocuments
+  try {
+    updatedUserDocuments = await UserModel.find({ _id: testUserId })
+  } catch (err) {
+    t.fail('Could not get Other User')
+    console.error(err)
+    process.exit(1)
+  }
+
+  updatedUserDocuments = updatedUserDocuments || [emptyUserDocument]
+  t.equal(updatedUserDocuments.length, 1, 'Should have only one document')
+
+  const updatedUserDocument = updatedUserDocuments[0]
+  t.notEqual(updatedUserDocument, emptyUserDocument, 'Should not return an empty document')
+
+  const updatedUser = <User>updatedUserDocument.toObject() || emptyUser
+  t.notEqual(updatedUser, emptyUser, 'Should not be an empty user')
+
+  const strippedSavedUser = stripUser(updatedUser)
+  t.deepEquals(strippedSavedUser, testUserWithoutPassword, 'Should be the same as Test User')
+
+  const savedDrawersOfUser = updatedUser.drawers || []
+  t.notDeepEqual(savedDrawersOfUser, [], 'Should have drawers')
+  t.equal(savedDrawersOfUser.length, 1, 'Should only have one user')
+
+  t.deepEquals(savedDrawersOfUser[0], testDrawer, 'Should have the test drawer')
+  await cleanup()
+  t.pass('Db is clean')
+})
+
+test.skip('add multiple drawers', async t => { }) // TODO: add when Drawer is implemented
 
 test('close db connection', async t => {
   await mongoose.connection.close()

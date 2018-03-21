@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run e2e-setup && npm run test-e2e && npm run e2e-teardown",
-    "test-e2e": "node -r dotenv/config $(find model -name \"*.e2e.js\") | node_modules/.bin/tap-spec",
-    "test-unit": "node -r dotenv/config $(find model -name \"*.unit.js\") | node_modules/.bin/tap-spec",
+    "test-e2e": "tape -r dotenv/config build/**/*.e2e.js | node_modules/.bin/tap-spec",
+    "test-unit": "tape -r dotenv/config build/**/*.spec.js  | node_modules/.bin/tap-spec",
     "start-containers": "docker-compose up -d",
     "stop-containers": "docker-compose down",
     "e2e-setup": "npm run star-containers && npm run migrate-local",
